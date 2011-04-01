@@ -1,0 +1,1 @@
+../../../geany-vala-binding/geany.vapi

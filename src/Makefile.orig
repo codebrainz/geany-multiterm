@@ -1,0 +1,9 @@
+VALAC=valac
+
+all: multiterm
+
+multiterm: multiterm.vala
+	$(VALAC) --pkg gtk+-2.0 --pkg vte -o $@ $<
+
+clean:
+	rm -f multiterm
