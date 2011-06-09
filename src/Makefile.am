@@ -18,4 +18,5 @@ multiterm_la_SOURCES	=	plugin.vala \
 							terminal.vala \
 							shell.vala \
 							python.vala \
+							ruby.vala \
 							notebook.vala
