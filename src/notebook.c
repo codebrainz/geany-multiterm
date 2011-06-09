@@ -65,15 +65,15 @@ static gpointer _g_object_ref0 (gpointer self) {
 
 void multi_term_notebook_add_terminal (MultiTermNotebook* self) {
 	MultiTermTabLabel* label = NULL;
-	MultiTermTerminal* term = NULL;
-	MultiTermTerminal* _tmp0_ = NULL;
+	MultiTermITerminal* term = NULL;
+	MultiTermShellTerminal* _tmp0_ = NULL;
 	MultiTermTabLabel* _tmp1_ = NULL;
-	MultiTermTerminal* _tmp2_;
+	MultiTermITerminal* _tmp2_;
 	MultiTermTabLabel* _tmp3_;
 	g_return_if_fail (self != NULL);
-	_tmp0_ = multi_term_terminal_new ();
+	_tmp0_ = multi_term_shell_terminal_new ();
 	_g_object_unref0 (term);
-	term = g_object_ref_sink (_tmp0_);
+	term = (MultiTermITerminal*) g_object_ref_sink (_tmp0_);
 	_tmp1_ = multi_term_tab_label_new ("Terminal");
 	_g_object_unref0 (label);
 	label = g_object_ref_sink (_tmp1_);

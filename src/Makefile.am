@@ -14,5 +14,8 @@ multiterm_la_CPPFLAGS	= 	@GTK_CFLAGS@ @GEANY_CFLAGS@ @VTE_CFLAGS@
 multiterm_la_LIBADD		= 	@GTK_LIBS@ @GEANY_LIBS@ @VTE_LIBS@
 multiterm_la_SOURCES	=	plugin.vala \
 							tab-label.vala \
+							iterminal.vala \
 							terminal.vala \
+							shell.vala \
+							python.vala \
 							notebook.vala

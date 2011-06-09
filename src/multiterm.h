@@ -35,6 +35,14 @@ typedef struct _MultiTermTabLabel MultiTermTabLabel;
 typedef struct _MultiTermTabLabelClass MultiTermTabLabelClass;
 typedef struct _MultiTermTabLabelPrivate MultiTermTabLabelPrivate;
 
+#define MULTI_TERM_TYPE_ITERMINAL (multi_term_iterminal_get_type ())
+#define MULTI_TERM_ITERMINAL(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), MULTI_TERM_TYPE_ITERMINAL, MultiTermITerminal))
+#define MULTI_TERM_IS_ITERMINAL(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), MULTI_TERM_TYPE_ITERMINAL))
+#define MULTI_TERM_ITERMINAL_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), MULTI_TERM_TYPE_ITERMINAL, MultiTermITerminalIface))
+
+typedef struct _MultiTermITerminal MultiTermITerminal;
+typedef struct _MultiTermITerminalIface MultiTermITerminalIface;
+
 #define MULTI_TERM_TYPE_TERMINAL (multi_term_terminal_get_type ())
 #define MULTI_TERM_TERMINAL(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), MULTI_TERM_TYPE_TERMINAL, MultiTermTerminal))
 #define MULTI_TERM_TERMINAL_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), MULTI_TERM_TYPE_TERMINAL, MultiTermTerminalClass))
@@ -45,6 +53,28 @@ typedef struct _MultiTermTabLabelPrivate MultiTermTabLabelPrivate;
 typedef struct _MultiTermTerminal MultiTermTerminal;
 typedef struct _MultiTermTerminalClass MultiTermTerminalClass;
 typedef struct _MultiTermTerminalPrivate MultiTermTerminalPrivate;
+
+#define MULTI_TERM_TYPE_SHELL_TERMINAL (multi_term_shell_terminal_get_type ())
+#define MULTI_TERM_SHELL_TERMINAL(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), MULTI_TERM_TYPE_SHELL_TERMINAL, MultiTermShellTerminal))
+#define MULTI_TERM_SHELL_TERMINAL_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), MULTI_TERM_TYPE_SHELL_TERMINAL, MultiTermShellTerminalClass))
+#define MULTI_TERM_IS_SHELL_TERMINAL(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), MULTI_TERM_TYPE_SHELL_TERMINAL))
+#define MULTI_TERM_IS_SHELL_TERMINAL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), MULTI_TERM_TYPE_SHELL_TERMINAL))
+#define MULTI_TERM_SHELL_TERMINAL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), MULTI_TERM_TYPE_SHELL_TERMINAL, MultiTermShellTerminalClass))
+
+typedef struct _MultiTermShellTerminal MultiTermShellTerminal;
+typedef struct _MultiTermShellTerminalClass MultiTermShellTerminalClass;
+typedef struct _MultiTermShellTerminalPrivate MultiTermShellTerminalPrivate;
+
+#define MULTI_TERM_TYPE_PYTHON_TERMINAL (multi_term_python_terminal_get_type ())
+#define MULTI_TERM_PYTHON_TERMINAL(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), MULTI_TERM_TYPE_PYTHON_TERMINAL, MultiTermPythonTerminal))
+#define MULTI_TERM_PYTHON_TERMINAL_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), MULTI_TERM_TYPE_PYTHON_TERMINAL, MultiTermPythonTerminalClass))
+#define MULTI_TERM_IS_PYTHON_TERMINAL(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), MULTI_TERM_TYPE_PYTHON_TERMINAL))
+#define MULTI_TERM_IS_PYTHON_TERMINAL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), MULTI_TERM_TYPE_PYTHON_TERMINAL))
+#define MULTI_TERM_PYTHON_TERMINAL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), MULTI_TERM_TYPE_PYTHON_TERMINAL, MultiTermPythonTerminalClass))
+
+typedef struct _MultiTermPythonTerminal MultiTermPythonTerminal;
+typedef struct _MultiTermPythonTerminalClass MultiTermPythonTerminalClass;
+typedef struct _MultiTermPythonTerminalPrivate MultiTermPythonTerminalPrivate;
 typedef struct _MultiTermNotebookPrivate MultiTermNotebookPrivate;
 
 struct _MultiTermTabLabel {
@@ -57,6 +87,15 @@ struct _MultiTermTabLabelClass {
 	GtkHBoxClass parent_class;
 };
 
+struct _MultiTermITerminalIface {
+	GTypeInterface parent_iface;
+	void (*run_command) (MultiTermITerminal* self, const gchar* command);
+	const gchar* (*get_tab_label_text) (MultiTermITerminal* self);
+	void (*set_tab_label_text) (MultiTermITerminal* self, const gchar* value);
+	void (*set_background_color) (MultiTermITerminal* self, const gchar* value);
+	void (*set_foreground_color) (MultiTermITerminal* self, const gchar* value);
+};
+
 struct _MultiTermTerminal {
 	GtkFrame parent_instance;
 	MultiTermTerminalPrivate * priv;
@@ -65,6 +104,25 @@ struct _MultiTermTerminal {
 
 struct _MultiTermTerminalClass {
 	GtkFrameClass parent_class;
+	void (*init_shell) (MultiTermTerminal* self);
+};
+
+struct _MultiTermShellTerminal {
+	MultiTermTerminal parent_instance;
+	MultiTermShellTerminalPrivate * priv;
+};
+
+struct _MultiTermShellTerminalClass {
+	MultiTermTerminalClass parent_class;
+};
+
+struct _MultiTermPythonTerminal {
+	MultiTermTerminal parent_instance;
+	MultiTermPythonTerminalPrivate * priv;
+};
+
+struct _MultiTermPythonTerminalClass {
+	MultiTermTerminalClass parent_class;
 };
 
 struct _MultiTermNotebook {
@@ -92,13 +150,22 @@ MultiTermTabLabel* multi_term_tab_label_construct (GType object_type, const gcha
 const gchar* multi_term_tab_label_get_text (MultiTermTabLabel* self);
 void multi_term_tab_label_set_text (MultiTermTabLabel* self, const gchar* value);
 GtkButton* multi_term_tab_label_get_button (MultiTermTabLabel* self);
+GType multi_term_iterminal_get_type (void) G_GNUC_CONST;
+void multi_term_iterminal_run_command (MultiTermITerminal* self, const gchar* command);
+const gchar* multi_term_iterminal_get_tab_label_text (MultiTermITerminal* self);
+void multi_term_iterminal_set_tab_label_text (MultiTermITerminal* self, const gchar* value);
+void multi_term_iterminal_set_background_color (MultiTermITerminal* self, const gchar* value);
+void multi_term_iterminal_set_foreground_color (MultiTermITerminal* self, const gchar* value);
 GType multi_term_terminal_get_type (void) G_GNUC_CONST;
-MultiTermTerminal* multi_term_terminal_new (void);
+void multi_term_terminal_init_shell (MultiTermTerminal* self);
+void multi_term_terminal_send_command (MultiTermTerminal* self, const gchar* command);
 MultiTermTerminal* multi_term_terminal_construct (GType object_type);
-const gchar* multi_term_terminal_get_tab_label_text (MultiTermTerminal* self);
-void multi_term_terminal_set_tab_label_text (MultiTermTerminal* self, const gchar* value);
-void multi_term_terminal_set_background_color (MultiTermTerminal* self, const gchar* value);
-void multi_term_terminal_set_foreground_color (MultiTermTerminal* self, const gchar* value);
+GType multi_term_shell_terminal_get_type (void) G_GNUC_CONST;
+MultiTermShellTerminal* multi_term_shell_terminal_new (void);
+MultiTermShellTerminal* multi_term_shell_terminal_construct (GType object_type);
+GType multi_term_python_terminal_get_type (void) G_GNUC_CONST;
+MultiTermPythonTerminal* multi_term_python_terminal_new (void);
+MultiTermPythonTerminal* multi_term_python_terminal_construct (GType object_type);
 void multi_term_notebook_add_terminal (MultiTermNotebook* self);
 void multi_term_notebook_remove_terminal (MultiTermNotebook* self, gint tab_num);
 MultiTermNotebook* multi_term_notebook_new (guint initial_terms);
