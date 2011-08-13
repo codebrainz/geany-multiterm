@@ -6,11 +6,17 @@
 #include <glib-object.h>
 #include "multiterm.h"
 #include <gtk/gtk.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define _g_object_unref0(var) ((var == NULL) ? NULL : (var = (g_object_unref (var), NULL)))
+#define _multi_term_config_unref0(var) ((var == NULL) ? NULL : (var = (multi_term_config_unref (var), NULL)))
+#define _g_free0(var) (var = (g_free (var), NULL))
+#define __g_list_free__multi_term_shell_config_free0_0(var) ((var == NULL) ? NULL : (var = (_g_list_free__multi_term_shell_config_free0_ (var), NULL)))
 
 struct _MultiTermNotebookPrivate {
 	GtkButton* add_button;
+	MultiTermConfig* cfg;
 };
 
 
@@ -22,9 +28,12 @@ enum  {
 };
 static void multi_term_notebook_on_tab_label_close_clicked (MultiTermNotebook* self, gint tab_num);
 static void multi_term_notebook_on_add_button_style_set (MultiTermNotebook* self);
+static void multi_term_notebook_on_add_button_clicked (MultiTermNotebook* self);
 static void _multi_term_notebook_on_tab_label_close_clicked_multi_term_tab_label_close_clicked (MultiTermTabLabel* _sender, gint tab_num, gpointer self);
-static void _multi_term_notebook_add_terminal_gtk_button_clicked (GtkButton* _sender, gpointer self);
+static void _multi_term_notebook_on_add_button_clicked_gtk_button_clicked (GtkButton* _sender, gpointer self);
 static void _multi_term_notebook_on_add_button_style_set_gtk_widget_style_set (GtkWidget* _sender, GtkStyle* previous_style, gpointer self);
+static void _multi_term_shell_config_free0_ (gpointer var);
+static void _g_list_free__multi_term_shell_config_free0_ (GList* self);
 static void multi_term_notebook_finalize (GObject* obj);
 
 
@@ -53,6 +62,12 @@ static void multi_term_notebook_on_add_button_style_set (MultiTermNotebook* self
 }
 
 
+static void multi_term_notebook_on_add_button_clicked (MultiTermNotebook* self) {
+	g_return_if_fail (self != NULL);
+	multi_term_notebook_add_terminal (self, NULL);
+}
+
+
 static void _multi_term_notebook_on_tab_label_close_clicked_multi_term_tab_label_close_clicked (MultiTermTabLabel* _sender, gint tab_num, gpointer self) {
 	multi_term_notebook_on_tab_label_close_clicked (self, tab_num);
 }
@@ -63,30 +78,39 @@ static gpointer _g_object_ref0 (gpointer self) {
 }
 
 
-void multi_term_notebook_add_terminal (MultiTermNotebook* self) {
+void multi_term_notebook_add_terminal (MultiTermNotebook* self, MultiTermShellConfig* cfg) {
 	MultiTermTabLabel* label = NULL;
-	MultiTermITerminal* term = NULL;
-	MultiTermShellTerminal* _tmp0_ = NULL;
-	MultiTermTabLabel* _tmp1_ = NULL;
-	MultiTermITerminal* _tmp2_;
-	MultiTermTabLabel* _tmp3_;
+	MultiTermTerminal* term = NULL;
+	gchar* name = NULL;
+	MultiTermTerminal* _tmp0_ = NULL;
+	MultiTermTerminal* _tmp3_;
+	MultiTermTabLabel* _tmp4_;
 	g_return_if_fail (self != NULL);
-	_tmp0_ = multi_term_shell_terminal_new ();
+	_tmp0_ = multi_term_terminal_new (NULL);
 	_g_object_unref0 (term);
-	term = (MultiTermITerminal*) g_object_ref_sink (_tmp0_);
-	_tmp1_ = multi_term_tab_label_new ("Terminal");
-	_g_object_unref0 (label);
-	label = g_object_ref_sink (_tmp1_);
+	term = g_object_ref_sink (_tmp0_);
+	if (cfg != NULL) {
+		MultiTermTabLabel* _tmp1_ = NULL;
+		_tmp1_ = multi_term_tab_label_new ((*cfg).name);
+		_g_object_unref0 (label);
+		label = g_object_ref_sink (_tmp1_);
+	} else {
+		MultiTermTabLabel* _tmp2_ = NULL;
+		_tmp2_ = multi_term_tab_label_new ("Terminal");
+		_g_object_unref0 (label);
+		label = g_object_ref_sink (_tmp2_);
+	}
 	gtk_widget_show_all ((GtkWidget*) label);
 	g_signal_connect_object (label, "close-clicked", (GCallback) _multi_term_notebook_on_tab_label_close_clicked_multi_term_tab_label_close_clicked, self, 0);
-	_tmp2_ = _g_object_ref0 (term);
-	g_object_set_data_full ((GObject*) label, "terminal", _tmp2_, g_object_unref);
-	_tmp3_ = _g_object_ref0 (label);
-	g_object_set_data_full ((GObject*) term, "label", _tmp3_, g_object_unref);
+	_tmp3_ = _g_object_ref0 (term);
+	g_object_set_data_full ((GObject*) label, "terminal", _tmp3_, g_object_unref);
+	_tmp4_ = _g_object_ref0 (label);
+	g_object_set_data_full ((GObject*) term, "label", _tmp4_, g_object_unref);
 	gtk_widget_show_all ((GtkWidget*) term);
 	gtk_notebook_append_page ((GtkNotebook*) self, (GtkWidget*) term, (GtkWidget*) label);
 	gtk_notebook_set_tab_reorderable ((GtkNotebook*) self, (GtkWidget*) term, TRUE);
 	gtk_notebook_set_tab_label_packing ((GtkNotebook*) self, (GtkWidget*) term, TRUE, TRUE, GTK_PACK_END);
+	_g_free0 (name);
 	_g_object_unref0 (term);
 	_g_object_unref0 (label);
 }
@@ -98,8 +122,8 @@ void multi_term_notebook_remove_terminal (MultiTermNotebook* self, gint tab_num)
 }
 
 
-static void _multi_term_notebook_add_terminal_gtk_button_clicked (GtkButton* _sender, gpointer self) {
-	multi_term_notebook_add_terminal (self);
+static void _multi_term_notebook_on_add_button_clicked_gtk_button_clicked (GtkButton* _sender, gpointer self) {
+	multi_term_notebook_on_add_button_clicked (self);
 }
 
 
@@ -108,61 +132,95 @@ static void _multi_term_notebook_on_add_button_style_set_gtk_widget_style_set (G
 }
 
 
-MultiTermNotebook* multi_term_notebook_construct (GType object_type, guint initial_terms) {
+static void _multi_term_shell_config_free0_ (gpointer var) {
+	(var == NULL) ? NULL : (var = (multi_term_shell_config_free (var), NULL));
+}
+
+
+static void _g_list_free__multi_term_shell_config_free0_ (GList* self) {
+	g_list_foreach (self, (GFunc) _multi_term_shell_config_free0_, NULL);
+	g_list_free (self);
+}
+
+
+MultiTermNotebook* multi_term_notebook_construct (GType object_type, const gchar* config_filename) {
 	MultiTermNotebook * self = NULL;
 	GtkImage* img = NULL;
 	GtkRcStyle* style = NULL;
-	GtkRcStyle* _tmp1_ = NULL;
-	GtkButton* _tmp2_ = NULL;
-	GtkImage* _tmp3_ = NULL;
+	GList* list = NULL;
+	guint len = 0U;
+	GtkRcStyle* _tmp0_ = NULL;
+	GtkButton* _tmp1_ = NULL;
+	GtkImage* _tmp2_ = NULL;
+	MultiTermConfig* _tmp3_ = NULL;
+	GList* _tmp4_ = NULL;
+	guint _tmp5_;
+	g_return_val_if_fail (config_filename != NULL, NULL);
 	self = (MultiTermNotebook*) g_object_new (object_type, NULL);
-	{
-		guint i;
-		i = (guint) 0;
-		{
-			gboolean _tmp0_;
-			_tmp0_ = TRUE;
-			while (TRUE) {
-				if (!_tmp0_) {
-					i++;
-				}
-				_tmp0_ = FALSE;
-				if (!(i < initial_terms)) {
-					break;
-				}
-				multi_term_notebook_add_terminal (self);
-			}
-		}
-	}
-	_tmp1_ = gtk_rc_style_new ();
+	_tmp0_ = gtk_rc_style_new ();
 	_g_object_unref0 (style);
-	style = _tmp1_;
+	style = _tmp0_;
 	style->xthickness = 0;
 	style->ythickness = 0;
-	_tmp2_ = (GtkButton*) gtk_button_new ();
+	_tmp1_ = (GtkButton*) gtk_button_new ();
 	_g_object_unref0 (self->priv->add_button);
-	self->priv->add_button = g_object_ref_sink (_tmp2_);
+	self->priv->add_button = g_object_ref_sink (_tmp1_);
 	gtk_widget_modify_style ((GtkWidget*) self->priv->add_button, style);
 	gtk_button_set_relief (self->priv->add_button, GTK_RELIEF_NONE);
 	gtk_button_set_focus_on_click (self->priv->add_button, FALSE);
 	gtk_container_set_border_width ((GtkContainer*) self->priv->add_button, (guint) 2);
 	gtk_widget_set_tooltip_text ((GtkWidget*) self->priv->add_button, "New terminal");
-	_tmp3_ = (GtkImage*) gtk_image_new_from_stock (GTK_STOCK_ADD, GTK_ICON_SIZE_MENU);
+	_tmp2_ = (GtkImage*) gtk_image_new_from_stock (GTK_STOCK_ADD, GTK_ICON_SIZE_MENU);
 	_g_object_unref0 (img);
-	img = g_object_ref_sink (_tmp3_);
+	img = g_object_ref_sink (_tmp2_);
 	gtk_container_add ((GtkContainer*) self->priv->add_button, (GtkWidget*) img);
-	g_signal_connect_object (self->priv->add_button, "clicked", (GCallback) _multi_term_notebook_add_terminal_gtk_button_clicked, self, 0);
+	g_signal_connect_object (self->priv->add_button, "clicked", (GCallback) _multi_term_notebook_on_add_button_clicked_gtk_button_clicked, self, 0);
 	gtk_widget_show_all ((GtkWidget*) self->priv->add_button);
 	g_signal_connect_object ((GtkWidget*) self->priv->add_button, "style-set", (GCallback) _multi_term_notebook_on_add_button_style_set_gtk_widget_style_set, self, 0);
 	gtk_notebook_set_action_widget ((GtkNotebook*) self, (GtkWidget*) self->priv->add_button, GTK_PACK_END);
+	_tmp3_ = multi_term_config_new (config_filename);
+	_multi_term_config_unref0 (self->priv->cfg);
+	self->priv->cfg = _tmp3_;
+	_tmp4_ = multi_term_config_get_shell_configs (self->priv->cfg);
+	__g_list_free__multi_term_shell_config_free0_0 (list);
+	list = _tmp4_;
+	_tmp5_ = g_list_length (list);
+	len = _tmp5_;
+	{
+		gint i;
+		i = 0;
+		{
+			gboolean _tmp6_;
+			_tmp6_ = TRUE;
+			while (TRUE) {
+				gconstpointer _tmp7_ = NULL;
+				MultiTermShellConfig _tmp8_;
+				MultiTermShellConfig _tmp9_ = {0};
+				MultiTermShellConfig sh;
+				if (!_tmp6_) {
+					i++;
+				}
+				_tmp6_ = FALSE;
+				if (!(i < len)) {
+					break;
+				}
+				_tmp7_ = g_list_nth_data (list, (guint) i);
+				_tmp8_ = (multi_term_shell_config_copy ((MultiTermShellConfig*) _tmp7_, &_tmp9_), _tmp9_);
+				sh = _tmp8_;
+				multi_term_notebook_add_terminal (self, &sh);
+				multi_term_shell_config_destroy (&sh);
+			}
+		}
+	}
+	__g_list_free__multi_term_shell_config_free0_0 (list);
 	_g_object_unref0 (style);
 	_g_object_unref0 (img);
 	return self;
 }
 
 
-MultiTermNotebook* multi_term_notebook_new (guint initial_terms) {
-	return multi_term_notebook_construct (MULTI_TERM_TYPE_NOTEBOOK, initial_terms);
+MultiTermNotebook* multi_term_notebook_new (const gchar* config_filename) {
+	return multi_term_notebook_construct (MULTI_TERM_TYPE_NOTEBOOK, config_filename);
 }
 
 
@@ -182,6 +240,7 @@ static void multi_term_notebook_finalize (GObject* obj) {
 	MultiTermNotebook * self;
 	self = MULTI_TERM_NOTEBOOK (obj);
 	_g_object_unref0 (self->priv->add_button);
+	_multi_term_config_unref0 (self->priv->cfg);
 	G_OBJECT_CLASS (multi_term_notebook_parent_class)->finalize (obj);
 }
 

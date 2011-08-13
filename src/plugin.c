@@ -9,7 +9,10 @@
 #include <geanyplugin.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glib/gstdio.h>
 
+#define _g_free0(var) (var = (g_free (var), NULL))
+#define _g_error_free0(var) ((var == NULL) ? NULL : (var = (g_error_free (var), NULL)))
 #define _g_object_unref0(var) ((var == NULL) ? NULL : (var = (g_object_unref (var), NULL)))
 
 
@@ -20,6 +23,7 @@ MultiTermNotebook* nb = NULL;
 extern GtkAlignment* align;
 GtkAlignment* align = NULL;
 
+gchar* init_config_file (void);
 
 
 static gint geany_vala_plugin_VERSION_CHECK (gint abi_version, gint api_required) {
@@ -58,6 +62,93 @@ void plugin_set_info (PluginInfo* info) {
 }
 
 
+gchar* init_config_file (void) {
+	gchar* result = NULL;
+	gchar* _tmp0_;
+	gchar* default_conf;
+	gchar* _tmp1_ = NULL;
+	gchar* config_dir;
+	gchar* _tmp2_ = NULL;
+	gchar* config_file;
+	gboolean _tmp3_;
+	GError * _inner_error_ = NULL;
+	_tmp0_ = g_strdup ("\n" \
+"[general]\n" \
+"# location=sidebar\n" \
+"location=message_window\n" \
+"\n" \
+"[shell=default]\n" \
+"\n" \
+"name=Default Shell\n" \
+"command=\n" \
+"track_title=true\n" \
+"bg_color=#ffffff\n" \
+"fg_color=#000000\n" \
+"\n" \
+"allow_bold=true\n" \
+"audible_bell=true\n" \
+"# one of: system, on, off\n" \
+"cursor_blink_mode=system\n" \
+"# one of: ascii_backspace, ascii_delete, delete_sequences, tty\n" \
+"backspace_binding=auto\n" \
+"\n" \
+"\n" \
+"\n" \
+"[shell=python]\n" \
+"name=Python Shell\n" \
+"command=bpython\n" \
+"track_title=false\n" \
+"\n" \
+"[shell=irb]\n" \
+"name=Ruby Shell\n" \
+"command=irb\n" \
+"track_title=false\n");
+	default_conf = _tmp0_;
+	_tmp1_ = g_build_filename (geany_data->app->configdir, "plugins", "multiterm", NULL);
+	config_dir = _tmp1_;
+	g_mkdir_with_parents (config_dir, 0755);
+	_tmp2_ = g_build_filename (geany_data->app->configdir, "plugins", "multiterm", "multiterm.conf", NULL);
+	config_file = _tmp2_;
+	_tmp3_ = g_file_test (config_file, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR);
+	if (!_tmp3_) {
+		g_file_set_contents (config_file, default_conf, (gssize) (-1), &_inner_error_);
+		if (_inner_error_ != NULL) {
+			if (_inner_error_->domain == G_FILE_ERROR) {
+				goto __catch0_g_file_error;
+			}
+			_g_free0 (config_file);
+			_g_free0 (config_dir);
+			_g_free0 (default_conf);
+			g_critical ("file %s: line %d: unexpected error: %s (%s, %d)", __FILE__, __LINE__, _inner_error_->message, g_quark_to_string (_inner_error_->domain), _inner_error_->code);
+			g_clear_error (&_inner_error_);
+			return NULL;
+		}
+	}
+	goto __finally0;
+	__catch0_g_file_error:
+	{
+		GError * err;
+		err = _inner_error_;
+		_inner_error_ = NULL;
+		g_warning ("plugin.vala:76: Unable to write default config file: %s", err->message);
+		_g_error_free0 (err);
+	}
+	__finally0:
+	if (_inner_error_ != NULL) {
+		_g_free0 (config_file);
+		_g_free0 (config_dir);
+		_g_free0 (default_conf);
+		g_critical ("file %s: line %d: uncaught error: %s (%s, %d)", __FILE__, __LINE__, _inner_error_->message, g_quark_to_string (_inner_error_->domain), _inner_error_->code);
+		g_clear_error (&_inner_error_);
+		return NULL;
+	}
+	result = config_file;
+	_g_free0 (config_dir);
+	_g_free0 (default_conf);
+	return result;
+}
+
+
 static GtkNotebook* geany_vala_plugin_main_widgets_get_message_window_notebook (GeanyMainWidgets* self) {
 	GtkNotebook* result;
 	GtkWidget* _tmp0_;
@@ -75,36 +166,41 @@ static gpointer _g_object_ref0 (gpointer self) {
 
 void plugin_init (GeanyData* data) {
 	GtkAlignment* _tmp0_ = NULL;
-	MultiTermNotebook* _tmp1_ = NULL;
-	MultiTermNotebook* _tmp2_;
-	GtkNotebook* _tmp3_ = NULL;
-	GtkLabel* _tmp4_ = NULL;
-	GtkLabel* _tmp5_;
-	GtkNotebook* _tmp6_ = NULL;
-	GtkNotebook* _tmp7_;
+	gchar* _tmp1_ = NULL;
+	gchar* _tmp2_;
+	MultiTermNotebook* _tmp3_ = NULL;
+	MultiTermNotebook* _tmp4_;
+	GtkNotebook* _tmp5_ = NULL;
+	GtkLabel* _tmp6_ = NULL;
+	GtkLabel* _tmp7_;
+	GtkNotebook* _tmp8_ = NULL;
+	GtkNotebook* _tmp9_;
 	GtkNotebook* mwnb;
-	gint _tmp8_;
+	gint _tmp10_;
 	g_return_if_fail (data != NULL);
 	plugin_module_make_resident (geany_plugin);
 	_tmp0_ = (GtkAlignment*) gtk_alignment_new (0.5f, 0.5f, 1.0f, 1.0f);
 	_g_object_unref0 (align);
 	align = g_object_ref_sink (_tmp0_);
-	_tmp1_ = multi_term_notebook_new ((guint) 1);
+	_tmp1_ = init_config_file ();
+	_tmp2_ = _tmp1_;
+	_tmp3_ = multi_term_notebook_new (_tmp2_);
 	_g_object_unref0 (nb);
-	nb = g_object_ref_sink (_tmp1_);
-	_tmp2_ = nb;
-	gtk_container_add ((GtkContainer*) align, (GtkWidget*) (GTK_IS_NOTEBOOK (_tmp2_) ? ((GtkNotebook*) _tmp2_) : NULL));
-	_tmp3_ = geany_vala_plugin_main_widgets_get_message_window_notebook (data->main_widgets);
-	_tmp4_ = (GtkLabel*) gtk_label_new ("MultiTerm");
-	_tmp5_ = g_object_ref_sink (_tmp4_);
-	gtk_notebook_append_page (_tmp3_, (GtkWidget*) align, (GtkWidget*) _tmp5_);
-	_g_object_unref0 (_tmp5_);
+	nb = g_object_ref_sink (_tmp3_);
+	_g_free0 (_tmp2_);
+	_tmp4_ = nb;
+	gtk_container_add ((GtkContainer*) align, (GtkWidget*) (GTK_IS_NOTEBOOK (_tmp4_) ? ((GtkNotebook*) _tmp4_) : NULL));
+	_tmp5_ = geany_vala_plugin_main_widgets_get_message_window_notebook (data->main_widgets);
+	_tmp6_ = (GtkLabel*) gtk_label_new ("MultiTerm");
+	_tmp7_ = g_object_ref_sink (_tmp6_);
+	gtk_notebook_append_page (_tmp5_, (GtkWidget*) align, (GtkWidget*) _tmp7_);
+	_g_object_unref0 (_tmp7_);
 	gtk_widget_show_all ((GtkWidget*) align);
-	_tmp6_ = geany_vala_plugin_main_widgets_get_message_window_notebook (data->main_widgets);
-	_tmp7_ = _g_object_ref0 (GTK_NOTEBOOK (_tmp6_));
-	mwnb = _tmp7_;
-	_tmp8_ = gtk_notebook_page_num (mwnb, (GtkWidget*) align);
-	gtk_notebook_set_current_page (mwnb, _tmp8_);
+	_tmp8_ = geany_vala_plugin_main_widgets_get_message_window_notebook (data->main_widgets);
+	_tmp9_ = _g_object_ref0 (GTK_NOTEBOOK (_tmp8_));
+	mwnb = _tmp9_;
+	_tmp10_ = gtk_notebook_page_num (mwnb, (GtkWidget*) align);
+	gtk_notebook_set_current_page (mwnb, _tmp10_);
 	_g_object_unref0 (mwnb);
 }
 

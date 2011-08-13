@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-VALAFLAGS = --vapidir vapi \
+VALAFLAGS = --vapidir $(top_srcdir)/src/vapi \
 				--pkg gtk+-2.0 \
 				--pkg geany \
 				--pkg vte \
@@ -13,10 +13,8 @@ multiterm_la_LDFLAGS	= 	-module -avoid-version -shared
 multiterm_la_CPPFLAGS	= 	@GTK_CFLAGS@ @GEANY_CFLAGS@ @VTE_CFLAGS@
 multiterm_la_LIBADD		= 	@GTK_LIBS@ @GEANY_LIBS@ @VTE_LIBS@
 multiterm_la_SOURCES	=	plugin.vala \
+							config.vala \
 							tab-label.vala \
 							iterminal.vala \
 							terminal.vala \
-							shell.vala \
-							python.vala \
-							ruby.vala \
 							notebook.vala

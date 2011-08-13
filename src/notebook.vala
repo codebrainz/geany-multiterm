@@ -7,6 +7,7 @@ namespace MultiTerm
 	public class Notebook : Gtk.Notebook
 	{
 		private Button add_button;
+		private Config cfg;
 
 		private void on_tab_label_close_clicked(int tab_num)
 		{
@@ -23,17 +24,26 @@ namespace MultiTerm
 			add_button.set_size_request(w+2, h+2);
 		}
 
-		public void add_terminal()
+		private void on_add_button_clicked()
+		{
+			add_terminal(null);
+		}
+
+		public void add_terminal(ShellConfig? cfg=null)
 		{
 			TabLabel label;
-			ITerminal term;
+			Terminal term;
+			string name;
 
-			term = new ShellTerminal();
+			term = new Terminal();
 
-			label = new TabLabel();
+            if (cfg != null)
+                label = new TabLabel(cfg.name);
+            else
+                label = new TabLabel();
 			label.show_all();
 			label.close_clicked.connect(on_tab_label_close_clicked);
-			label.set_data<ITerminal>("terminal", term);
+			label.set_data<Terminal>("terminal", term);
 
 			term.set_data<TabLabel>("label", label);
 			term.show_all();
@@ -51,13 +61,12 @@ namespace MultiTerm
 			this.remove_page(tab_num);
 		}
 
-		public class Notebook(uint initial_terms=1)
+		public class Notebook(string config_filename)
 		{
 			Image img;
 			RcStyle style;
-
-			for (uint i=0; i < initial_terms; i++)
-				add_terminal();
+			List<ShellConfig?> list;
+			uint len;
 
 			style = new RcStyle();
 			style.xthickness = 0;
@@ -71,10 +80,19 @@ namespace MultiTerm
 			add_button.set_tooltip_text("New terminal");
 			img = new Image.from_stock(Gtk.Stock.ADD, Gtk.IconSize.MENU);
 			add_button.add(img);
-			add_button.clicked.connect(add_terminal);
+			add_button.clicked.connect(on_add_button_clicked);
 			add_button.show_all();
 			add_button.style_set.connect(on_add_button_style_set);
 			this.set_action_widget(add_button, PackType.END);
+
+			cfg = new Config(config_filename);
+			list = cfg.shell_configs;
+			len = list.length();
+			for (int i=0; i < len; i++)
+			{
+				ShellConfig sh = list.nth_data(i);
+				add_terminal(sh);
+			}
 		}
 	}
 }

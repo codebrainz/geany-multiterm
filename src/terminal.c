@@ -13,20 +13,23 @@
 
 #define _g_object_unref0(var) ((var == NULL) ? NULL : (var = (g_object_unref (var), NULL)))
 #define _g_free0(var) (var = (g_free (var), NULL))
+#define _multi_term_config_unref0(var) ((var == NULL) ? NULL : (var = (multi_term_config_unref (var), NULL)))
+
+struct _MultiTermTerminalPrivate {
+	MultiTermShellConfig sh;
+};
 
 
 static gpointer multi_term_terminal_parent_class = NULL;
-static MultiTermITerminalIface* multi_term_terminal_multi_term_iterminal_parent_iface = NULL;
 
+#define MULTI_TERM_TERMINAL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), MULTI_TERM_TYPE_TERMINAL, MultiTermTerminalPrivate))
 enum  {
 	MULTI_TERM_TERMINAL_DUMMY_PROPERTY,
 	MULTI_TERM_TERMINAL_TAB_LABEL_TEXT,
 	MULTI_TERM_TERMINAL_BACKGROUND_COLOR,
 	MULTI_TERM_TERMINAL_FOREGROUND_COLOR
 };
-static void multi_term_terminal_real_init_shell (MultiTermTerminal* self);
 static void multi_term_terminal_on_window_title_changed (MultiTermTerminal* self);
-static void multi_term_terminal_real_run_command (MultiTermITerminal* base, const gchar* command);
 static void multi_term_terminal_on_vte_realize (MultiTermTerminal* self);
 static void multi_term_terminal_on_child_exited (MultiTermTerminal* self);
 static void _multi_term_terminal_on_window_title_changed_vte_terminal_window_title_changed (VteTerminal* _sender, gpointer self);
@@ -37,29 +40,16 @@ static void _vala_multi_term_terminal_get_property (GObject * object, guint prop
 static void _vala_multi_term_terminal_set_property (GObject * object, guint property_id, const GValue * value, GParamSpec * pspec);
 
 
-static void multi_term_terminal_real_init_shell (MultiTermTerminal* self) {
-	g_return_if_fail (self != NULL);
-	g_critical ("Type `%s' does not implement abstract method `multi_term_terminal_init_shell'", g_type_name (G_TYPE_FROM_INSTANCE (self)));
-	return;
-}
-
-
-void multi_term_terminal_init_shell (MultiTermTerminal* self) {
-	MULTI_TERM_TERMINAL_GET_CLASS (self)->init_shell (self);
-}
-
-
 static void multi_term_terminal_on_window_title_changed (MultiTermTerminal* self) {
 	const gchar* _tmp0_ = NULL;
 	g_return_if_fail (self != NULL);
 	_tmp0_ = vte_terminal_get_window_title (self->terminal);
-	multi_term_iterminal_set_tab_label_text ((MultiTermITerminal*) self, _tmp0_);
+	multi_term_terminal_set_tab_label_text (self, _tmp0_);
 }
 
 
-static void multi_term_terminal_real_run_command (MultiTermITerminal* base, const gchar* command) {
-	MultiTermTerminal * self;
-	self = (MultiTermTerminal*) base;
+void multi_term_terminal_run_command (MultiTermTerminal* self, const gchar* command) {
+	g_return_if_fail (self != NULL);
 	g_return_if_fail (command != NULL);
 	vte_terminal_fork_command (self->terminal, command, NULL, NULL, NULL, TRUE, TRUE, TRUE);
 }
@@ -67,14 +57,29 @@ static void multi_term_terminal_real_run_command (MultiTermITerminal* base, cons
 
 static void multi_term_terminal_on_vte_realize (MultiTermTerminal* self) {
 	g_return_if_fail (self != NULL);
-	multi_term_iterminal_set_background_color ((MultiTermITerminal*) self, "white");
-	multi_term_iterminal_set_foreground_color ((MultiTermITerminal*) self, "black");
+	if (self->priv->sh.cfg != NULL) {
+		gchar* _tmp0_ = NULL;
+		gchar* _tmp1_;
+		gchar* _tmp2_ = NULL;
+		gchar* _tmp3_;
+		_tmp0_ = multi_term_config_get_background_color (self->priv->sh.cfg);
+		_tmp1_ = _tmp0_;
+		multi_term_terminal_set_background_color (self, _tmp1_);
+		_g_free0 (_tmp1_);
+		_tmp2_ = multi_term_config_get_foreground_color (self->priv->sh.cfg);
+		_tmp3_ = _tmp2_;
+		multi_term_terminal_set_foreground_color (self, _tmp3_);
+		_g_free0 (_tmp3_);
+	} else {
+		multi_term_terminal_set_background_color (self, "#ffffff");
+		multi_term_terminal_set_foreground_color (self, "#000000");
+	}
 }
 
 
 static void multi_term_terminal_on_child_exited (MultiTermTerminal* self) {
 	g_return_if_fail (self != NULL);
-	multi_term_terminal_init_shell (self);
+	vte_terminal_fork_command (self->terminal, self->priv->sh.command, NULL, NULL, NULL, TRUE, TRUE, TRUE);
 }
 
 
@@ -105,38 +110,81 @@ static void _multi_term_terminal_on_vte_realize_gtk_widget_realize (GtkWidget* _
 }
 
 
-MultiTermTerminal* multi_term_terminal_construct (GType object_type) {
+MultiTermTerminal* multi_term_terminal_construct (GType object_type, MultiTermShellConfig* sh) {
 	MultiTermTerminal * self = NULL;
 	GtkVScrollbar* vsb = NULL;
 	GtkHBox* hbox = NULL;
-	VteTerminal* _tmp0_ = NULL;
-	GtkAdjustment* _tmp1_ = NULL;
-	GtkVScrollbar* _tmp2_ = NULL;
-	GtkHBox* _tmp3_ = NULL;
+	VteTerminal* _tmp6_ = NULL;
+	GtkAdjustment* _tmp7_ = NULL;
+	GtkVScrollbar* _tmp8_ = NULL;
+	GtkHBox* _tmp9_ = NULL;
 	self = (MultiTermTerminal*) g_object_new (object_type, NULL);
-	_tmp0_ = (VteTerminal*) vte_terminal_new ();
+	if (sh == NULL) {
+		MultiTermShellConfig _tmp0_ = {0};
+		MultiTermShellConfig _tmp1_ = {0};
+		gchar* _tmp2_;
+		gchar* _tmp3_;
+		memset (&_tmp0_, 0, sizeof (MultiTermShellConfig));
+		_tmp1_ = _tmp0_;
+		multi_term_shell_config_destroy (&self->priv->sh);
+		self->priv->sh = _tmp1_;
+		_tmp2_ = g_strdup ("default");
+		_g_free0 (self->priv->sh.section);
+		self->priv->sh.section = _tmp2_;
+		_tmp3_ = g_strdup ("Default Terminal");
+		_g_free0 (self->priv->sh.name);
+		self->priv->sh.name = _tmp3_;
+		self->priv->sh.track_title = TRUE;
+		_g_free0 (self->priv->sh.command);
+		self->priv->sh.command = NULL;
+		_multi_term_config_unref0 (self->priv->sh.cfg);
+		self->priv->sh.cfg = NULL;
+	} else {
+		MultiTermShellConfig _tmp4_;
+		MultiTermShellConfig _tmp5_ = {0};
+		_tmp4_ = (multi_term_shell_config_copy (sh, &_tmp5_), _tmp5_);
+		multi_term_shell_config_destroy (&self->priv->sh);
+		self->priv->sh = _tmp4_;
+	}
+	_tmp6_ = (VteTerminal*) vte_terminal_new ();
 	_g_object_unref0 (self->terminal);
-	self->terminal = g_object_ref_sink (_tmp0_);
+	self->terminal = g_object_ref_sink (_tmp6_);
 	gtk_widget_set_size_request ((GtkWidget*) self->terminal, 100, 100);
 	gtk_widget_show_all ((GtkWidget*) self->terminal);
-	_tmp1_ = vte_terminal_get_adjustment (self->terminal);
-	_tmp2_ = (GtkVScrollbar*) gtk_vscrollbar_new (_tmp1_);
+	_tmp7_ = vte_terminal_get_adjustment (self->terminal);
+	_tmp8_ = (GtkVScrollbar*) gtk_vscrollbar_new (_tmp7_);
 	_g_object_unref0 (vsb);
-	vsb = g_object_ref_sink (_tmp2_);
-	_tmp3_ = (GtkHBox*) gtk_hbox_new (FALSE, 0);
+	vsb = g_object_ref_sink (_tmp8_);
+	_tmp9_ = (GtkHBox*) gtk_hbox_new (FALSE, 0);
 	_g_object_unref0 (hbox);
-	hbox = g_object_ref_sink (_tmp3_);
+	hbox = g_object_ref_sink (_tmp9_);
 	gtk_box_pack_start ((GtkBox*) hbox, (GtkWidget*) self->terminal, TRUE, TRUE, (guint) 0);
 	gtk_box_pack_start ((GtkBox*) hbox, (GtkWidget*) vsb, FALSE, FALSE, (guint) 0);
 	gtk_container_add ((GtkContainer*) self, (GtkWidget*) hbox);
-	g_signal_connect_object (self->terminal, "window-title-changed", (GCallback) _multi_term_terminal_on_window_title_changed_vte_terminal_window_title_changed, self, 0);
+	if (self->priv->sh.track_title) {
+		g_signal_connect_object (self->terminal, "window-title-changed", (GCallback) _multi_term_terminal_on_window_title_changed_vte_terminal_window_title_changed, self, 0);
+	}
 	g_signal_connect_object (self->terminal, "child-exited", (GCallback) _multi_term_terminal_on_child_exited_vte_terminal_child_exited, self, 0);
-	vte_terminal_set_font_from_string_full (self->terminal, "Monospace 9", VTE_ANTI_ALIAS_FORCE_ENABLE);
+	if (self->priv->sh.cfg != NULL) {
+		gchar* _tmp10_ = NULL;
+		gchar* _tmp11_;
+		_tmp10_ = multi_term_config_get_font (self->priv->sh.cfg);
+		_tmp11_ = _tmp10_;
+		vte_terminal_set_font_from_string_full (self->terminal, _tmp11_, VTE_ANTI_ALIAS_FORCE_ENABLE);
+		_g_free0 (_tmp11_);
+	} else {
+		vte_terminal_set_font_from_string_full (self->terminal, "Monospace 9", VTE_ANTI_ALIAS_FORCE_ENABLE);
+	}
 	g_signal_connect_object ((GtkWidget*) self->terminal, "realize", (GCallback) _multi_term_terminal_on_vte_realize_gtk_widget_realize, self, 0);
-	multi_term_terminal_init_shell (self);
+	vte_terminal_fork_command (self->terminal, self->priv->sh.command, NULL, NULL, NULL, TRUE, TRUE, TRUE);
 	_g_object_unref0 (hbox);
 	_g_object_unref0 (vsb);
 	return self;
+}
+
+
+MultiTermTerminal* multi_term_terminal_new (MultiTermShellConfig* sh) {
+	return multi_term_terminal_construct (MULTI_TERM_TYPE_TERMINAL, sh);
 }
 
 
@@ -145,14 +193,13 @@ static gpointer _g_object_ref0 (gpointer self) {
 }
 
 
-static const gchar* multi_term_terminal_real_get_tab_label_text (MultiTermITerminal* base) {
+const gchar* multi_term_terminal_get_tab_label_text (MultiTermTerminal* self) {
 	const gchar* result;
-	MultiTermTerminal* self;
 	gconstpointer _tmp0_ = NULL;
 	MultiTermTabLabel* _tmp1_;
 	MultiTermTabLabel* label;
 	const gchar* _tmp2_ = NULL;
-	self = (MultiTermTerminal*) base;
+	g_return_val_if_fail (self != NULL, NULL);
 	_tmp0_ = g_object_get_data ((GObject*) self, "label");
 	_tmp1_ = _g_object_ref0 ((MultiTermTabLabel*) _tmp0_);
 	label = _tmp1_;
@@ -163,12 +210,11 @@ static const gchar* multi_term_terminal_real_get_tab_label_text (MultiTermITermi
 }
 
 
-static void multi_term_terminal_real_set_tab_label_text (MultiTermITerminal* base, const gchar* value) {
-	MultiTermTerminal* self;
+void multi_term_terminal_set_tab_label_text (MultiTermTerminal* self, const gchar* value) {
 	gconstpointer _tmp0_ = NULL;
 	MultiTermTabLabel* _tmp1_;
 	MultiTermTabLabel* label;
-	self = (MultiTermTerminal*) base;
+	g_return_if_fail (self != NULL);
 	_tmp0_ = g_object_get_data ((GObject*) self, "label");
 	_tmp1_ = _g_object_ref0 ((MultiTermTabLabel*) _tmp0_);
 	label = _tmp1_;
@@ -178,12 +224,11 @@ static void multi_term_terminal_real_set_tab_label_text (MultiTermITerminal* bas
 }
 
 
-static void multi_term_terminal_real_set_background_color (MultiTermITerminal* base, const gchar* value) {
-	MultiTermTerminal* self;
+void multi_term_terminal_set_background_color (MultiTermTerminal* self, const gchar* value) {
 	GdkColor color = {0};
 	GdkColormap* _tmp0_ = NULL;
 	GdkColor _tmp1_ = {0};
-	self = (MultiTermTerminal*) base;
+	g_return_if_fail (self != NULL);
 	memset (&color, 0, sizeof (GdkColor));
 	_tmp0_ = gdk_colormap_get_system ();
 	gdk_colormap_alloc_color (_tmp0_, &color, TRUE, TRUE);
@@ -194,12 +239,11 @@ static void multi_term_terminal_real_set_background_color (MultiTermITerminal* b
 }
 
 
-static void multi_term_terminal_real_set_foreground_color (MultiTermITerminal* base, const gchar* value) {
-	MultiTermTerminal* self;
+void multi_term_terminal_set_foreground_color (MultiTermTerminal* self, const gchar* value) {
 	GdkColor color = {0};
 	GdkColormap* _tmp0_ = NULL;
 	GdkColor _tmp1_ = {0};
-	self = (MultiTermTerminal*) base;
+	g_return_if_fail (self != NULL);
 	memset (&color, 0, sizeof (GdkColor));
 	_tmp0_ = gdk_colormap_get_system ();
 	gdk_colormap_alloc_color (_tmp0_, &color, TRUE, TRUE);
@@ -212,27 +256,18 @@ static void multi_term_terminal_real_set_foreground_color (MultiTermITerminal* b
 
 static void multi_term_terminal_class_init (MultiTermTerminalClass * klass) {
 	multi_term_terminal_parent_class = g_type_class_peek_parent (klass);
-	MULTI_TERM_TERMINAL_CLASS (klass)->init_shell = multi_term_terminal_real_init_shell;
+	g_type_class_add_private (klass, sizeof (MultiTermTerminalPrivate));
 	G_OBJECT_CLASS (klass)->get_property = _vala_multi_term_terminal_get_property;
 	G_OBJECT_CLASS (klass)->set_property = _vala_multi_term_terminal_set_property;
 	G_OBJECT_CLASS (klass)->finalize = multi_term_terminal_finalize;
-	g_object_class_override_property (G_OBJECT_CLASS (klass), MULTI_TERM_TERMINAL_TAB_LABEL_TEXT, "tab-label-text");
-	g_object_class_override_property (G_OBJECT_CLASS (klass), MULTI_TERM_TERMINAL_BACKGROUND_COLOR, "background-color");
-	g_object_class_override_property (G_OBJECT_CLASS (klass), MULTI_TERM_TERMINAL_FOREGROUND_COLOR, "foreground-color");
-}
-
-
-static void multi_term_terminal_multi_term_iterminal_interface_init (MultiTermITerminalIface * iface) {
-	multi_term_terminal_multi_term_iterminal_parent_iface = g_type_interface_peek_parent (iface);
-	iface->run_command = (void (*)(MultiTermITerminal* ,const gchar*)) multi_term_terminal_real_run_command;
-	iface->get_tab_label_text = multi_term_terminal_real_get_tab_label_text;
-	iface->set_tab_label_text = multi_term_terminal_real_set_tab_label_text;
-	iface->set_background_color = multi_term_terminal_real_set_background_color;
-	iface->set_foreground_color = multi_term_terminal_real_set_foreground_color;
+	g_object_class_install_property (G_OBJECT_CLASS (klass), MULTI_TERM_TERMINAL_TAB_LABEL_TEXT, g_param_spec_string ("tab-label-text", "tab-label-text", "tab-label-text", NULL, G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_READABLE | G_PARAM_WRITABLE));
+	g_object_class_install_property (G_OBJECT_CLASS (klass), MULTI_TERM_TERMINAL_BACKGROUND_COLOR, g_param_spec_string ("background-color", "background-color", "background-color", NULL, G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_WRITABLE));
+	g_object_class_install_property (G_OBJECT_CLASS (klass), MULTI_TERM_TERMINAL_FOREGROUND_COLOR, g_param_spec_string ("foreground-color", "foreground-color", "foreground-color", NULL, G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_WRITABLE));
 }
 
 
 static void multi_term_terminal_instance_init (MultiTermTerminal * self) {
+	self->priv = MULTI_TERM_TERMINAL_GET_PRIVATE (self);
 }
 
 
@@ -240,6 +275,7 @@ static void multi_term_terminal_finalize (GObject* obj) {
 	MultiTermTerminal * self;
 	self = MULTI_TERM_TERMINAL (obj);
 	_g_object_unref0 (self->terminal);
+	multi_term_shell_config_destroy (&self->priv->sh);
 	G_OBJECT_CLASS (multi_term_terminal_parent_class)->finalize (obj);
 }
 
@@ -248,10 +284,8 @@ GType multi_term_terminal_get_type (void) {
 	static volatile gsize multi_term_terminal_type_id__volatile = 0;
 	if (g_once_init_enter (&multi_term_terminal_type_id__volatile)) {
 		static const GTypeInfo g_define_type_info = { sizeof (MultiTermTerminalClass), (GBaseInitFunc) NULL, (GBaseFinalizeFunc) NULL, (GClassInitFunc) multi_term_terminal_class_init, (GClassFinalizeFunc) NULL, NULL, sizeof (MultiTermTerminal), 0, (GInstanceInitFunc) multi_term_terminal_instance_init, NULL };
-		static const GInterfaceInfo multi_term_iterminal_info = { (GInterfaceInitFunc) multi_term_terminal_multi_term_iterminal_interface_init, (GInterfaceFinalizeFunc) NULL, NULL};
 		GType multi_term_terminal_type_id;
-		multi_term_terminal_type_id = g_type_register_static (GTK_TYPE_FRAME, "MultiTermTerminal", &g_define_type_info, G_TYPE_FLAG_ABSTRACT);
-		g_type_add_interface_static (multi_term_terminal_type_id, MULTI_TERM_TYPE_ITERMINAL, &multi_term_iterminal_info);
+		multi_term_terminal_type_id = g_type_register_static (GTK_TYPE_FRAME, "MultiTermTerminal", &g_define_type_info, 0);
 		g_once_init_leave (&multi_term_terminal_type_id__volatile, multi_term_terminal_type_id);
 	}
 	return multi_term_terminal_type_id__volatile;
@@ -263,7 +297,7 @@ static void _vala_multi_term_terminal_get_property (GObject * object, guint prop
 	self = MULTI_TERM_TERMINAL (object);
 	switch (property_id) {
 		case MULTI_TERM_TERMINAL_TAB_LABEL_TEXT:
-		g_value_set_string (value, multi_term_iterminal_get_tab_label_text ((MultiTermITerminal*) self));
+		g_value_set_string (value, multi_term_terminal_get_tab_label_text (self));
 		break;
 		default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -277,13 +311,13 @@ static void _vala_multi_term_terminal_set_property (GObject * object, guint prop
 	self = MULTI_TERM_TERMINAL (object);
 	switch (property_id) {
 		case MULTI_TERM_TERMINAL_TAB_LABEL_TEXT:
-		multi_term_iterminal_set_tab_label_text ((MultiTermITerminal*) self, g_value_get_string (value));
+		multi_term_terminal_set_tab_label_text (self, g_value_get_string (value));
 		break;
 		case MULTI_TERM_TERMINAL_BACKGROUND_COLOR:
-		multi_term_iterminal_set_background_color ((MultiTermITerminal*) self, g_value_get_string (value));
+		multi_term_terminal_set_background_color (self, g_value_get_string (value));
 		break;
 		case MULTI_TERM_TERMINAL_FOREGROUND_COLOR:
-		multi_term_iterminal_set_foreground_color ((MultiTermITerminal*) self, g_value_get_string (value));
+		multi_term_terminal_set_foreground_color (self, g_value_get_string (value));
 		break;
 		default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
