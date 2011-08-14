@@ -11,7 +11,6 @@
 
 #define _g_object_unref0(var) ((var == NULL) ? NULL : (var = (g_object_unref (var), NULL)))
 #define _multi_term_config_unref0(var) ((var == NULL) ? NULL : (var = (multi_term_config_unref (var), NULL)))
-#define _g_free0(var) (var = (g_free (var), NULL))
 #define __g_list_free__multi_term_shell_config_free0_0(var) ((var == NULL) ? NULL : (var = (_g_list_free__multi_term_shell_config_free0_ (var), NULL)))
 
 struct _MultiTermNotebookPrivate {
@@ -81,36 +80,38 @@ static gpointer _g_object_ref0 (gpointer self) {
 void multi_term_notebook_add_terminal (MultiTermNotebook* self, MultiTermShellConfig* cfg) {
 	MultiTermTabLabel* label = NULL;
 	MultiTermTerminal* term = NULL;
-	gchar* name = NULL;
-	MultiTermTerminal* _tmp0_ = NULL;
-	MultiTermTerminal* _tmp3_;
-	MultiTermTabLabel* _tmp4_;
+	MultiTermTerminal* _tmp4_;
+	MultiTermTabLabel* _tmp5_;
 	g_return_if_fail (self != NULL);
-	_tmp0_ = multi_term_terminal_new (NULL);
-	_g_object_unref0 (term);
-	term = g_object_ref_sink (_tmp0_);
 	if (cfg != NULL) {
+		MultiTermTerminal* _tmp0_ = NULL;
 		MultiTermTabLabel* _tmp1_ = NULL;
+		_tmp0_ = multi_term_terminal_new (cfg);
+		_g_object_unref0 (term);
+		term = g_object_ref_sink (_tmp0_);
 		_tmp1_ = multi_term_tab_label_new ((*cfg).name);
 		_g_object_unref0 (label);
 		label = g_object_ref_sink (_tmp1_);
 	} else {
-		MultiTermTabLabel* _tmp2_ = NULL;
-		_tmp2_ = multi_term_tab_label_new ("Terminal");
+		MultiTermTerminal* _tmp2_ = NULL;
+		MultiTermTabLabel* _tmp3_ = NULL;
+		_tmp2_ = multi_term_terminal_new (NULL);
+		_g_object_unref0 (term);
+		term = g_object_ref_sink (_tmp2_);
+		_tmp3_ = multi_term_tab_label_new ("Terminal");
 		_g_object_unref0 (label);
-		label = g_object_ref_sink (_tmp2_);
+		label = g_object_ref_sink (_tmp3_);
 	}
 	gtk_widget_show_all ((GtkWidget*) label);
 	g_signal_connect_object (label, "close-clicked", (GCallback) _multi_term_notebook_on_tab_label_close_clicked_multi_term_tab_label_close_clicked, self, 0);
-	_tmp3_ = _g_object_ref0 (term);
-	g_object_set_data_full ((GObject*) label, "terminal", _tmp3_, g_object_unref);
-	_tmp4_ = _g_object_ref0 (label);
-	g_object_set_data_full ((GObject*) term, "label", _tmp4_, g_object_unref);
+	_tmp4_ = _g_object_ref0 (term);
+	g_object_set_data_full ((GObject*) label, "terminal", _tmp4_, g_object_unref);
+	_tmp5_ = _g_object_ref0 (label);
+	g_object_set_data_full ((GObject*) term, "label", _tmp5_, g_object_unref);
 	gtk_widget_show_all ((GtkWidget*) term);
 	gtk_notebook_append_page ((GtkNotebook*) self, (GtkWidget*) term, (GtkWidget*) label);
 	gtk_notebook_set_tab_reorderable ((GtkNotebook*) self, (GtkWidget*) term, TRUE);
 	gtk_notebook_set_tab_label_packing ((GtkNotebook*) self, (GtkWidget*) term, TRUE, TRUE, GTK_PACK_END);
-	_g_free0 (name);
 	_g_object_unref0 (term);
 	_g_object_unref0 (label);
 }

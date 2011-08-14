@@ -188,7 +188,7 @@ gchar* multi_term_config_get_background_color (MultiTermConfig* self) {
 	gchar* _tmp1_;
 	GError * _inner_error_ = NULL;
 	g_return_val_if_fail (self != NULL, NULL);
-	_tmp0_ = g_key_file_get_string (self->priv->kf, "general", "background_color", &_inner_error_);
+	_tmp0_ = g_key_file_get_string (self->priv->kf, "general", "bg_color", &_inner_error_);
 	_tmp1_ = _tmp0_;
 	if (_inner_error_ != NULL) {
 		if (_inner_error_->domain == G_KEY_FILE_ERROR) {
@@ -222,7 +222,7 @@ gchar* multi_term_config_get_background_color (MultiTermConfig* self) {
 
 void multi_term_config_set_background_color (MultiTermConfig* self, const gchar* value) {
 	g_return_if_fail (self != NULL);
-	g_key_file_set_string (self->priv->kf, "general", "background_color", value);
+	g_key_file_set_string (self->priv->kf, "general", "bg_color", value);
 }
 
 
@@ -232,7 +232,7 @@ gchar* multi_term_config_get_foreground_color (MultiTermConfig* self) {
 	gchar* _tmp1_;
 	GError * _inner_error_ = NULL;
 	g_return_val_if_fail (self != NULL, NULL);
-	_tmp0_ = g_key_file_get_string (self->priv->kf, "general", "foreground_color", &_inner_error_);
+	_tmp0_ = g_key_file_get_string (self->priv->kf, "general", "fg_color", &_inner_error_);
 	_tmp1_ = _tmp0_;
 	if (_inner_error_ != NULL) {
 		if (_inner_error_->domain == G_KEY_FILE_ERROR) {
@@ -266,7 +266,7 @@ gchar* multi_term_config_get_foreground_color (MultiTermConfig* self) {
 
 void multi_term_config_set_foreground_color (MultiTermConfig* self, const gchar* value) {
 	g_return_if_fail (self != NULL);
-	g_key_file_set_string (self->priv->kf, "general", "foreground_color", value);
+	g_key_file_set_string (self->priv->kf, "general", "fg_color", value);
 }
 
 

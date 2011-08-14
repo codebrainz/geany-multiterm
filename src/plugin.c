@@ -76,14 +76,14 @@ gchar* init_config_file (void) {
 "[general]\n" \
 "# location=sidebar\n" \
 "location=message_window\n" \
+"bg_color=#ffffff\n" \
+"fg_color=#000000\n" \
+"font=Monospace 9\n" \
 "\n" \
 "[shell=default]\n" \
-"\n" \
 "name=Default Shell\n" \
 "command=\n" \
 "track_title=true\n" \
-"bg_color=#ffffff\n" \
-"fg_color=#000000\n" \
 "\n" \
 "allow_bold=true\n" \
 "audible_bell=true\n" \
@@ -91,8 +91,6 @@ gchar* init_config_file (void) {
 "cursor_blink_mode=system\n" \
 "# one of: ascii_backspace, ascii_delete, delete_sequences, tty\n" \
 "backspace_binding=auto\n" \
-"\n" \
-"\n" \
 "\n" \
 "[shell=python]\n" \
 "name=Python Shell\n" \
@@ -130,7 +128,7 @@ gchar* init_config_file (void) {
 		GError * err;
 		err = _inner_error_;
 		_inner_error_ = NULL;
-		g_warning ("plugin.vala:76: Unable to write default config file: %s", err->message);
+		g_warning ("plugin.vala:74: Unable to write default config file: %s", err->message);
 		_g_error_free0 (err);
 	}
 	__finally0:

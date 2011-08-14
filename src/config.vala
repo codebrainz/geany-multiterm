@@ -53,7 +53,7 @@ namespace MultiTerm
 			{
 				try
 				{
-					return kf.get_string("general", "background_color");
+					return kf.get_string("general", "bg_color");
 				}
 				catch (KeyFileError err)
 				{
@@ -61,7 +61,7 @@ namespace MultiTerm
 					return "#ffffff";
 				}
 			}
-			set { kf.set_string("general", "background_color", value); }
+			set { kf.set_string("general", "bg_color", value); }
 		}
 
 		public string foreground_color
@@ -70,7 +70,7 @@ namespace MultiTerm
 			{
 				try
 				{
-					return kf.get_string("general", "foreground_color");
+					return kf.get_string("general", "fg_color");
 				}
 				catch (KeyFileError err)
 				{
@@ -78,7 +78,7 @@ namespace MultiTerm
 					return "#000000";
 				}
 			}
-			set { kf.set_string("general", "foreground_color", value); }
+			set { kf.set_string("general", "fg_color", value); }
 		}
 
 		public string font

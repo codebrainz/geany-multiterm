@@ -95,7 +95,11 @@ namespace MultiTerm
 				this.sh.cfg = null;
 			}
 			else
+            {
 				this.sh = sh;
+                if (this.sh.command == "")
+                    this.sh.command = null;
+            }
 
 			terminal = new Vte.Terminal();
 			terminal.set_size_request(100, 100); // stupid

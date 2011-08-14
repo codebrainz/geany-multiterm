@@ -33,14 +33,18 @@ namespace MultiTerm
 		{
 			TabLabel label;
 			Terminal term;
-			string name;
-
-			term = new Terminal();
 
             if (cfg != null)
+            {
+                term = new Terminal(cfg);
                 label = new TabLabel(cfg.name);
+            }
             else
+            {
+                term = new Terminal();
                 label = new TabLabel();
+            }
+
 			label.show_all();
 			label.close_clicked.connect(on_tab_label_close_clicked);
 			label.set_data<Terminal>("terminal", term);

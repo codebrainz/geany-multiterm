@@ -29,14 +29,14 @@ static string init_config_file()
 [general]
 # location=sidebar
 location=message_window
+bg_color=#ffffff
+fg_color=#000000
+font=Monospace 9
 
 [shell=default]
-
 name=Default Shell
 command=
 track_title=true
-bg_color=#ffffff
-fg_color=#000000
 
 allow_bold=true
 audible_bell=true
@@ -44,8 +44,6 @@ audible_bell=true
 cursor_blink_mode=system
 # one of: ascii_backspace, ascii_delete, delete_sequences, tty
 backspace_binding=auto
-
-
 
 [shell=python]
 name=Python Shell

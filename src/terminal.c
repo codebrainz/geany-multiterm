@@ -145,6 +145,10 @@ MultiTermTerminal* multi_term_terminal_construct (GType object_type, MultiTermSh
 		_tmp4_ = (multi_term_shell_config_copy (sh, &_tmp5_), _tmp5_);
 		multi_term_shell_config_destroy (&self->priv->sh);
 		self->priv->sh = _tmp4_;
+		if (g_strcmp0 (self->priv->sh.command, "") == 0) {
+			_g_free0 (self->priv->sh.command);
+			self->priv->sh.command = NULL;
+		}
 	}
 	_tmp6_ = (VteTerminal*) vte_terminal_new ();
 	_g_object_unref0 (self->terminal);
